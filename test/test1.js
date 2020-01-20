@@ -59,5 +59,30 @@ describe('MyContract', function () {
         "ERC721: owner query for nonexistent token",
     );
   });
-  
+
+  it('deployer is owner, mintToken', async function () {
+    await myNFT.mintToken(owner, 1) 
+    expect(await myNFT.ownerOf(1)).to.equal(owner);
+  });
+
+  it('should be able to transfer token to bank unsafely', async function () {
+    await myNFT.transferFrom(owner, mybank.address, 1,{ from: owner }) 
+    expect(await myNFT.ownerOf(1)).to.equal(mybank.address);
+  });
+
+  it('contract bank is owner', async function () {
+    expect(await myNFT.ownerOf(1)).to.equal(mybank.address);
+  });
+
+  it('contract bank misunderstands who is owner internally', async function () {
+    expectRevert(
+      mybank.ownerOf(myNFT.address, 1),
+      "ERC721: owner query for nonexistent token"
+    );
+  });
+
+  it('Should be able to transfer token that was deposited to bank unsafely', async function () {
+    await mybank.recoverNonSafeTransferredERC721(myNFT.address, 1, owner, { from: owner }),
+    expect(await myNFT.ownerOf(1)).to.equal(owner);
+  });    
 });

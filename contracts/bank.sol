@@ -195,10 +195,21 @@ event Transfer(
      */
     function _isApprovedOrOwner(address smartContract, uint256 tokenId) internal view returns (bool) {
         require(_exists(tokenId, smartContract), "ERC721: operator query for nonexistent token");
-        address owner = ownerOf(smartContract, tokenId);
         return msg.sender == ownerOf(smartContract, tokenId);
     }
-    
+
+    /**
+    * @dev if they called the wrong transfer function (not safeTransferFrom), they have no way of recovering in our contract
+     */
+
+    function recoverNonSafeTransferredERC721(address contractAddress, uint256 tokenId, address to) public {
+        // make Sure Token is not Owned         
+        require(_tokenOwner[contractAddress][tokenId] == address(0));
+
+        IERC721(contractAddress).safeTransferFrom(address(this), to, tokenId, '');
+       _tokenOwner[contractAddress][tokenId] = address(0);
+        emit Transfer(msg.sender, to, tokenId);
+    }
  
     /**
      * @dev Internal function to transfer ownership of a given token ID to another address.
