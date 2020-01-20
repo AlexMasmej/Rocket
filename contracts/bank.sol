@@ -17,7 +17,7 @@ contract Escrow is ERC165 {
         require(msg.sender == _owner);
         _;
     }
-    
+
     bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
     
     address public _owner;
@@ -73,9 +73,6 @@ contract Escrow is ERC165 {
         isAdminlocked[contractAddress][tokenId] = false;
     }
 
-
-
-
     /**
      * @dev Gets the owner of the specified token ID at specified smart contract address.
      * @param tokenId uint256 ID of the token to query the owner of
@@ -88,9 +85,6 @@ contract Escrow is ERC165 {
 
         return owner;
     }
-
-    mapping(address => mapping(uint256 => address)) public escrowExpiration;
-
 
     /**
     * @dev When someone sends us a token record it so that we have an internal record of who owns what

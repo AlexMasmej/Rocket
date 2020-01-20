@@ -26,6 +26,7 @@ describe('MyContract', function () {
   });
 
   it('should be able to transfer token to bank', async function () {
+    // need test to handle not using safe transfer from to be able to redeem tokens 
     await myNFT.safeTransferFrom(owner, mybank.address, 0,{ from: owner }) 
     expect(await myNFT.ownerOf(0)).to.equal(mybank.address);
   });
