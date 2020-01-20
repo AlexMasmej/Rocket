@@ -43,6 +43,12 @@ describe('MyContract', function () {
     expect(await mybank.ownerOf(myNFT.address, 0)).to.equal(owner);
   });
 
+  it('Should not be able to transfer token that was deposited to bank safely with recoverNonSafeTransferredERC721', async function () {
+    expectRevert(
+      mybank.recoverNonSafeTransferredERC721(myNFT.address, 0, owner, { from: owner }),
+      'token is owned'
+    );
+  });
 
   it('should be able to transfer from bank to original contract', async function () {
     await mybank.safeTransferFrom(myNFT.address, owner, owner, 0, '0x0a', { from: owner }),

@@ -204,7 +204,7 @@ event Transfer(
 
     function recoverNonSafeTransferredERC721(address contractAddress, uint256 tokenId, address to) public {
         // make Sure Token is not Owned         
-        require(_tokenOwner[contractAddress][tokenId] == address(0));
+        require(_tokenOwner[contractAddress][tokenId] == address(0), 'token is owned');
 
         IERC721(contractAddress).safeTransferFrom(address(this), to, tokenId, '');
        _tokenOwner[contractAddress][tokenId] = address(0);
