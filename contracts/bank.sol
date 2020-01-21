@@ -1,24 +1,19 @@
 pragma solidity ^0.5.12;
 
 import "./erc165.sol";
+import "./BankStorage.sol";
 
 interface IERC721  {
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata _data) external;
 }
 
-contract Escrow is ERC165 {
+contract Escrow is ERC165, BankStorage {
 
     constructor()public {
         _registerInterface(_ERC721_RECEIVED);
     }
-    
+
     bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
-    
-
-    mapping(address => mapping(uint256 => address)) public escrowBalance;
-
-    // smart contract where the NFT is stored, and who deposited it
-    mapping(address => mapping(uint256 => address)) public _tokenOwner;
 
     /**
      * @dev Gets the owner of the specified token ID at specified smart contract address.
@@ -40,9 +35,9 @@ contract Escrow is ERC165 {
     * @dev When someone sends us a token record it so that we have an internal record of who owns what
      */
     function onERC721Received(
-        address operator, 
-        address from, 
-        uint256 tokenId, 
+        address operator,
+        address from,
+        uint256 tokenId,
         bytes calldata data
         ) external returns (bytes4) {
         _tokenOwner[msg.sender][tokenId] = from;
@@ -97,7 +92,7 @@ event Transfer(
      */
     function safeTransferFrom(address smartContract, address from, address to, uint256 tokenId, bytes memory _data) public {
         require(msg.sender == ownerOf(smartContract, tokenId), 'must be owner');
-        
+
         _safeTransferFrom(smartContract,from, to, tokenId, _data);
     }
 
@@ -139,8 +134,8 @@ event Transfer(
         address owner = ownerOf(smartContract, tokenId);
         return msg.sender == ownerOf(smartContract, tokenId);
     }
-    
- 
+
+
     /**
      * @dev Internal function to transfer ownership of a given token ID to another address.
      * As opposed to {transferFrom}, this imposes no restrictions on msg.sender.
@@ -156,7 +151,7 @@ event Transfer(
        _tokenOwner[smartContract][tokenId] = address(0);
         emit Transfer(from, to, tokenId);
     }
-    
+
     function isContract(address account) internal view returns (bool) {
         // This method relies in extcodesize, which returns 0 for contracts in
         // construction, since the code is only stored at the end of the
