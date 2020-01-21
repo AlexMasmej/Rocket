@@ -1,61 +1,34 @@
 pragma solidity ^0.5.12;
 
-import "./erc165.sol";
-import "./BankStorage.sol";
+import {ERC165} from './erc165.sol';
+import {RocketStorage} from './RocketStorage.sol';
+import {Escrow} from './Escrow.sol';
+import {Ownable} from './Ownable.sol';
+import {Proxiable} from './Proxiable.sol';
+import {LibraryLock} from './LibraryLock.sol';
 
-interface IERC721  {
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata _data) external;
-}
-
-contract Escrow is ERC165, BankStorage {
-
-    constructor()public {
-        _registerInterface(_ERC721_RECEIVED);
-    }
-
-    bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
-
-    /**
-     * @dev Gets the owner of the specified token ID at specified smart contract address.
-     * @param tokenId uint256 ID of the token to query the owner of
-     * @param contractAddress address of the smart contract to query the owner of given token
-     * @return address currently marked as the owner of the given token ID
-     */
-    function ownerOf(address contractAddress, uint256 tokenId) public view returns (address) {
-        address owner = _tokenOwner[contractAddress][tokenId];
-        require(owner != address(0), "ERC721: owner query for nonexistent token");
-
-        return owner;
-    }
-
-    mapping(address => mapping(uint256 => address)) public escrowExpiration;
-
-
-    /**
-    * @dev When someone sends us a token record it so that we have an internal record of who owns what
-     */
-    function onERC721Received(
-        address operator,
+interface IERC721 {
+    function safeTransferFrom(
         address from,
+        address to,
         uint256 tokenId,
-        bytes calldata data
-        ) external returns (bytes4) {
-        _tokenOwner[msg.sender][tokenId] = from;
-        return _ERC721_RECEIVED;
-    }
+        bytes calldata _data
+    ) external;
 }
 
-contract bank is ERC165, Escrow {
-
-event Transfer(
-    address indexed _from,
-    address indexed _to,
-    uint256 indexed _tokenId
-  );
-
-
-    // which can be also obtained as `IERC721Receiver(0).onERC721Received.selector`
-    bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
+contract Rocket is
+    RocketStorage,
+    ERC165,
+    Escrow,
+    Ownable,
+    Proxiable,
+    LibraryLock
+{
+    event Transfer(
+        address indexed _from,
+        address indexed _to,
+        uint256 indexed _tokenId
+    );
 
     /*
      *     bytes4(keccak256('balanceOf(address)')) == 0x70a08231
@@ -72,8 +45,13 @@ event Transfer(
      *        0xa22cb465 ^ 0xe985e9c ^ 0x23b872dd ^ 0x42842e0e ^ 0xb88d4fde == 0x80ac58cd
      */
     bytes4 private constant _INTERFACE_ID_ERC721 = 0x80ac58cd;
+    // which can be also obtained as `IERC721Receiver(0).onERC721Received.selector`
+    bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
 
-    constructor () public {
+    function initialize() public {
+        require(!initialized, 'The library has already been initialized.');
+        LibraryLock.initialize();
+        _owner = msg.sender;
         // register the supported interfaces to conform to ERC721 via ERC165
         _registerInterface(_INTERFACE_ID_ERC721);
     }
@@ -90,10 +68,16 @@ event Transfer(
      * @param tokenId uint256 ID of the token to be transferred
      * @param _data bytes data to send along with a safe transfer check
      */
-    function safeTransferFrom(address smartContract, address from, address to, uint256 tokenId, bytes memory _data) public {
+    function safeTransferFrom(
+        address smartContract,
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory _data
+    ) public {
         require(msg.sender == ownerOf(smartContract, tokenId), 'must be owner');
 
-        _safeTransferFrom(smartContract,from, to, tokenId, _data);
+        _safeTransferFrom(smartContract, from, to, tokenId, _data);
     }
 
     /**
@@ -108,9 +92,18 @@ event Transfer(
      * @param tokenId uint256 ID of the token to be transferred
      * @param _data bytes data to send along with a safe transfer check
      */
-    function _safeTransferFrom(address smartContract,address from, address to, uint256 tokenId, bytes memory _data) internal {
-        _transferFrom(smartContract,from, to, tokenId);
-        require(_checkOnERC721Received(from, to, tokenId, _data), "ERC721: transfer to non ERC721Receiver implementer");
+    function _safeTransferFrom(
+        address smartContract,
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory _data
+    ) internal {
+        _transferFrom(smartContract, from, to, tokenId);
+        require(
+            _checkOnERC721Received(from, to, tokenId, _data),
+            'ERC721: transfer to non ERC721Receiver implementer'
+        );
     }
 
     /**
@@ -118,7 +111,11 @@ event Transfer(
      * @param tokenId uint256 ID of the token to query the existence of
      * @return bool whether the token exists
      */
-    function _exists(uint256 tokenId, address smartContract) internal view returns (bool) {
+    function _exists(uint256 tokenId, address smartContract)
+        internal
+        view
+        returns (bool)
+    {
         address owner = _tokenOwner[smartContract][tokenId];
         return owner != address(0);
     }
@@ -129,12 +126,18 @@ event Transfer(
      * @return bool whether the msg.sender is approved for the given token ID,
      * is an operator of the owner, or is the owner of the token
      */
-    function _isApprovedOrOwner(address smartContract, uint256 tokenId) internal view returns (bool) {
-        require(_exists(tokenId, smartContract), "ERC721: operator query for nonexistent token");
+    function _isApprovedOrOwner(address smartContract, uint256 tokenId)
+        internal
+        view
+        returns (bool)
+    {
+        require(
+            _exists(tokenId, smartContract),
+            'ERC721: operator query for nonexistent token'
+        );
         address owner = ownerOf(smartContract, tokenId);
         return msg.sender == ownerOf(smartContract, tokenId);
     }
-
 
     /**
      * @dev Internal function to transfer ownership of a given token ID to another address.
@@ -143,12 +146,20 @@ event Transfer(
      * @param to address to receive the ownership of the given token ID
      * @param tokenId uint256 ID of the token to be transferred
      */
-    function _transferFrom(address smartContract, address from, address to, uint256 tokenId) internal {
-        require(ownerOf(smartContract, tokenId) == from, "ERC721: transfer of token that is not own");
-        require(to != address(0), "ERC721: transfer to the zero address");
+    function _transferFrom(
+        address smartContract,
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal {
+        require(
+            ownerOf(smartContract, tokenId) == from,
+            'ERC721: transfer of token that is not own'
+        );
+        require(to != address(0), 'ERC721: transfer to the zero address');
 
         IERC721(smartContract).safeTransferFrom(address(this), to, tokenId, '');
-       _tokenOwner[smartContract][tokenId] = address(0);
+        _tokenOwner[smartContract][tokenId] = address(0);
         emit Transfer(from, to, tokenId);
     }
 
@@ -163,7 +174,9 @@ event Transfer(
         bytes32 codehash;
         bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
         // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
+        assembly {
+            codehash := extcodehash(account)
+        }
         return (codehash != 0x0 && codehash != accountHash);
     }
 
@@ -178,15 +191,29 @@ event Transfer(
      * @param _data bytes optional data to send along with the call
      * @return bool whether the call correctly returned the expected magic value
      */
-    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory _data)
-        internal returns (bool)
-    {
+    function _checkOnERC721Received(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory _data
+    ) internal returns (bool) {
         if (!isContract(to)) {
             return true;
         }
 
-        bytes4 retval = Escrow(to).onERC721Received(msg.sender, from, tokenId, _data);
+        bytes4 retval = Escrow(to).onERC721Received(
+            msg.sender,
+            from,
+            tokenId,
+            _data
+        );
         return (retval == _ERC721_RECEIVED);
+    }
+
+    // @dev Update the bank logic contract code
+    function updateCode(address newCode) external onlyOwner delegatedOnly {
+        updateCodeAddress(newCode);
+        emit CodeUpdated(newCode);
     }
 
 }
