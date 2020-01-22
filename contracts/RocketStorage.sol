@@ -5,6 +5,10 @@ contract RocketStorage {
     address public _owner;
     string public name;
     bool public initialized;
+    /**
+     * @dev Mapping of interface ids to whether or not it's supported.
+     */
+    mapping(bytes4 => bool) public _supportedInterfaces;
     // Owner approving locking token as collateral
     mapping(address => mapping(uint256 => bool)) public isOwnerlocked;
 

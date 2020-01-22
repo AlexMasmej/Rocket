@@ -1,6 +1,6 @@
 pragma solidity ^0.5.12;
 
-import {ERC165} from './erc165.sol';
+import {ERC165} from './ERC165.sol';
 import {Escrow} from './Escrow.sol';
 import {RocketStorage} from './RocketStorage.sol';
 import {Ownable} from './Ownable.sol';
@@ -9,8 +9,8 @@ import {LibraryLock} from './LibraryLock.sol';
 import {IERC721} from './IERC721.sol';
 
 contract Rocket is
-    ERC165,
     RocketStorage,
+    ERC165,
     Escrow,
     Ownable,
     Proxiable,

@@ -1,9 +1,9 @@
 pragma solidity ^0.5.12;
 
-import {ERC165} from './erc165.sol';
+import {ERC165} from './ERC165.sol';
 import {RocketStorage} from './RocketStorage.sol';
 
-contract Escrow is ERC165, RocketStorage {
+contract Escrow is RocketStorage, ERC165 {
     constructor() public {
         _registerInterface(_ERC721_RECEIVED);
         _owner = msg.sender;
