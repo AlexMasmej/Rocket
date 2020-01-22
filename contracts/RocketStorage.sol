@@ -5,12 +5,6 @@ contract RocketStorage {
     address public _owner;
     string public name;
     bool public initialized;
-    mapping(bytes4 => bool) private _supportedInterfaces;
-    mapping(address => mapping(uint256 => address)) public escrowBalance;
-    mapping(address => mapping(uint256 => address)) public escrowExpiration;
-
-    /// New changes
-
     // Owner approving locking token as collateral
     mapping(address => mapping(uint256 => bool)) public isOwnerlocked;
 
