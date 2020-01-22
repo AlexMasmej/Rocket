@@ -1,6 +1,6 @@
-const { expectRevert } = require('@openzeppelin/test-helpers');
+const {expectRevert} = require('@openzeppelin/test-helpers');
 
-const { expect } = require('chai');
+const {expect} = require('chai');
 
 const Proxy = artifacts.require('Proxy');
 const Rocket = artifacts.require('Rocket'); // Loads a compiled contract
@@ -36,7 +36,8 @@ contract('Rocket', accounts => {
   });
 
   it('should be able to transfer token to bank', async function() {
-    await myNFT.safeTransferFrom(owner, rocket.address, 0, { from: owner });
+    // need test to handle not using safe transfer from to be able to redeem tokens
+    await myNFT.safeTransferFrom(owner, rocket.address, 0, {from: owner});
     expect(await myNFT.ownerOf(0)).to.equal(rocket.address);
   });
 
@@ -50,6 +51,15 @@ contract('Rocket', accounts => {
 
   it('original owner is owner in bank', async function() {
     expect(await rocket.ownerOf(myNFT.address, 0)).to.equal(owner);
+  });
+
+  it('Should not be able to transfer token that was deposited to bank safely with recoverNonSafeTransferredERC721', async function() {
+    expectRevert(
+      rocket.recoverNonSafeTransferredERC721(myNFT.address, 0, owner, {
+        from: owner
+      }),
+      'token is owned'
+    );
   });
 
   it('should be able to transfer from bank to original contract', async function() {
@@ -68,5 +78,33 @@ contract('Rocket', accounts => {
       rocket.ownerOf(myNFT.address, 0),
       'ERC721: owner query for nonexistent token'
     );
+  });
+
+  it('deployer is owner, mintToken', async function() {
+    await myNFT.mintToken(owner, 1);
+    expect(await myNFT.ownerOf(1)).to.equal(owner);
+  });
+
+  it('should be able to transfer token to bank unsafely', async function() {
+    await myNFT.transferFrom(owner, rocket.address, 1, {from: owner});
+    expect(await myNFT.ownerOf(1)).to.equal(rocket.address);
+  });
+
+  it('contract bank is owner', async function() {
+    expect(await myNFT.ownerOf(1)).to.equal(rocket.address);
+  });
+
+  it('contract bank misunderstands who is owner internally', async function() {
+    expectRevert(
+      rocket.ownerOf(myNFT.address, 1),
+      'ERC721: owner query for nonexistent token'
+    );
+  });
+
+  it('Should be able to transfer token that was deposited to bank unsafely', async function() {
+    await rocket.recoverNonSafeTransferredERC721(myNFT.address, 1, owner, {
+      from: owner
+    }),
+      expect(await myNFT.ownerOf(1)).to.equal(owner);
   });
 });

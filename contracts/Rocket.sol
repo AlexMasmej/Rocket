@@ -21,7 +21,6 @@ contract Rocket is
         address indexed _to,
         uint256 indexed _tokenId
     );
-
     event CodeUpdated(address newCode);
 
     // which can be also obtained as `IERC721Receiver(0).onERC721Received.selector`
@@ -72,8 +71,34 @@ contract Rocket is
         bytes memory _data
     ) public {
         require(msg.sender == ownerOf(smartContract, tokenId), 'must be owner');
+        require(
+            isAdminLocked(smartContract, tokenId) == false,
+            'administrator lock'
+        );
+        require(isOwnerLocked(smartContract, tokenId) == false, 'owner lock');
 
         _safeTransferFrom(smartContract, from, to, tokenId, _data);
+    }
+
+    function adminCollateralize(
+        address smartContract,
+        address to,
+        uint256 tokenId,
+        bytes memory _data
+    ) public onlyOwner {
+        require(
+            isAdminLocked(smartContract, tokenId) == true,
+            'administrator lock'
+        );
+        require(isOwnerLocked(smartContract, tokenId) == true, 'owner lock');
+
+        _safeTransferFrom(
+            smartContract,
+            ownerOf(smartContract, tokenId),
+            to,
+            tokenId,
+            _data
+        );
     }
 
     /**
@@ -131,8 +156,32 @@ contract Rocket is
             _exists(tokenId, smartContract),
             'ERC721: operator query for nonexistent token'
         );
-        address owner = ownerOf(smartContract, tokenId);
         return msg.sender == ownerOf(smartContract, tokenId);
+    }
+
+    /**
+    * @dev if they called the wrong transfer function (not safeTransferFrom), they have no way of recovering in our contract
+     */
+
+    function recoverNonSafeTransferredERC721(
+        address contractAddress,
+        uint256 tokenId,
+        address to
+    ) public {
+        // make Sure Token is not Owned
+        require(
+            _tokenOwner[contractAddress][tokenId] == address(0),
+            'token is owned'
+        );
+
+        IERC721(contractAddress).safeTransferFrom(
+            address(this),
+            to,
+            tokenId,
+            ''
+        );
+        _tokenOwner[contractAddress][tokenId] = address(0);
+        emit Transfer(msg.sender, to, tokenId);
     }
 
     /**

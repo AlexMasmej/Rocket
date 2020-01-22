@@ -7,7 +7,16 @@ contract RocketStorage {
     bool public initialized;
     mapping(bytes4 => bool) private _supportedInterfaces;
     mapping(address => mapping(uint256 => address)) public escrowBalance;
+    mapping(address => mapping(uint256 => address)) public escrowExpiration;
+
+    /// New changes
+
+    // Owner approving locking token as collateral
+    mapping(address => mapping(uint256 => bool)) public isOwnerlocked;
+
+    // admin locking token as collateral
+    mapping(address => mapping(uint256 => bool)) public isAdminlocked;
+
     // smart contract where the NFT is stored, and who deposited it
     mapping(address => mapping(uint256 => address)) public _tokenOwner;
-    mapping(address => mapping(uint256 => address)) public escrowExpiration;
 }
