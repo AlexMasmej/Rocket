@@ -1,24 +1,16 @@
 pragma solidity ^0.5.12;
 
 import {ERC165} from './erc165.sol';
-import {RocketStorage} from './RocketStorage.sol';
 import {Escrow} from './Escrow.sol';
+import {RocketStorage} from './RocketStorage.sol';
 import {Ownable} from './Ownable.sol';
 import {Proxiable} from './Proxiable.sol';
 import {LibraryLock} from './LibraryLock.sol';
-
-interface IERC721 {
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes calldata _data
-    ) external;
-}
+import {IERC721} from './IERC721.sol';
 
 contract Rocket is
-    RocketStorage,
     ERC165,
+    RocketStorage,
     Escrow,
     Ownable,
     Proxiable,
@@ -29,6 +21,11 @@ contract Rocket is
         address indexed _to,
         uint256 indexed _tokenId
     );
+
+    event CodeUpdated(address newCode);
+
+    // which can be also obtained as `IERC721Receiver(0).onERC721Received.selector`
+    bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
 
     /*
      *     bytes4(keccak256('balanceOf(address)')) == 0x70a08231
@@ -45,13 +42,12 @@ contract Rocket is
      *        0xa22cb465 ^ 0xe985e9c ^ 0x23b872dd ^ 0x42842e0e ^ 0xb88d4fde == 0x80ac58cd
      */
     bytes4 private constant _INTERFACE_ID_ERC721 = 0x80ac58cd;
-    // which can be also obtained as `IERC721Receiver(0).onERC721Received.selector`
-    bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
 
-    function initialize() public {
+    function initialize(string memory name_) public {
         require(!initialized, 'The library has already been initialized.');
         LibraryLock.initialize();
         _owner = msg.sender;
+        name = name_;
         // register the supported interfaces to conform to ERC721 via ERC165
         _registerInterface(_INTERFACE_ID_ERC721);
     }
