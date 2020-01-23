@@ -1,8 +1,15 @@
-const bank = artifacts.require("bank");
-const NFToken = artifacts.require("NFToken");
+const Proxy = artifacts.require('Proxy');
+const Rocket = artifacts.require('Rocket');
+const NFToken = artifacts.require('NFToken');
 
-module.exports = function(deployer) {
-  deployer.deploy(bank);
+module.exports = async deployer => {
   deployer.deploy(NFToken);
+  await deployer.deploy(Rocket);
+  const rocketLogic = await Rocket.deployed();
+  // const rocketConstructCode = await rocketLogic.contract.methods
+  //   .initialize('Rocket')
+  //   .encodeABI();
+  // deployer.deploy(Proxy); //, rocketConstructCode, rocketLogic.contract.address);
+  // const proxy = await Proxy.deployed();
+  // console.log(proxy.contract.address);
 };
-

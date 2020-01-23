@@ -6,15 +6,25 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ganache-cli": "^6.8.1",
+    "truffle": "^5.1.7"
+  },
   "devDependencies": {
     "@openzeppelin/test-environment": "^0.1.1",
     "@openzeppelin/test-helpers": "^0.5.4",
+    "@truffle/hdwallet-provider": "^1.0.29",
     "chai": "^4.2.0",
-    "mocha": "^6.2.2"
+    "mocha": "^6.2.2",
+    "sol-proxy": "^0.1.2",
+    "truffle-flattener": "^1.4.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "network": "ganache-cli",
+    "migrate": "truffle migrate",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "flatten": "truffle-flattener contracts/bank.sol > flat.ignore.sol",
+    "proxify": "sol-proxy create flat.ignore.sol"
   },
   "author": "",
   "license": "ISC"
