@@ -80,7 +80,7 @@ contract Rocket is
         _safeTransferFrom(smartContract, from, to, tokenId, _data);
     }
 
-    function adminCollateralize(
+    function adminSeize(
         address smartContract,
         address to,
         uint256 tokenId,
